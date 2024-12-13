@@ -228,7 +228,7 @@ resource "aws_iam_role" "jadhav_public_role" {
 # IAM Policy for S3 Access
 resource "aws_iam_policy" "jadhav_s3_access" {
   name        = "jadhav-s3-access-unique"
-  description = "Full access to the S3 bucket"
+  description = "Full access to the S3 bucket and list all buckets"
   policy      = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -236,6 +236,11 @@ resource "aws_iam_policy" "jadhav_s3_access" {
         Action   = ["s3:*"],
         Effect   = "Allow",
         Resource = [aws_s3_bucket.jadhav_private_bucket.arn, "${aws_s3_bucket.jadhav_private_bucket.arn}/*"]
+      },
+      {
+        Action   = ["s3:ListAllMyBuckets"],
+        Effect   = "Allow",
+        Resource = "*"
       }
     ]
   })
