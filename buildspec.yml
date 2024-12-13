@@ -17,13 +17,13 @@ phases:
       - echo Initializing Terraform
       - terraform init
       - echo Planning Deployment
-      - terraform plan
+      - terraform plan -out=tfplan
       - echo Applying Deployment
       - terraform apply -auto-approve tfplan
   post_build:
     commands:
       - echo Waiting for 5 minutes before destroying the deployment
-      - sleep 300
+      - sleep 600
       - echo Destroying Deployment
       - terraform destroy -auto-approve
 artifacts:
