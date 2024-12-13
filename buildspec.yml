@@ -17,7 +17,7 @@ phases:
       - echo Initializing Terraform
       - terraform init
       - echo Planning Deployment
-      - terraform plan -out=tfplan
+      - terraform plan
       - echo Applying Deployment
       - terraform apply -auto-approve tfplan
   post_build:
