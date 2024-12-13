@@ -47,7 +47,7 @@ resource "aws_route_table_association" "public" {
 }
 
 # Security Group for Public Subnet
-resource "aws_security_group" "srihari_public_sg" {
+resource "aws_security_group" "sinha_public_sg" {
   vpc_id = aws_vpc.main.id
 
   ingress {
@@ -73,14 +73,14 @@ resource "aws_security_group" "srihari_public_sg" {
 }
 
 # Security Group for Private Subnet
-resource "aws_security_group" "srihari_private_sg" {
+resource "aws_security_group" "sinha_private_sg" {
   vpc_id = aws_vpc.main.id
 
   ingress {
     from_port       = 0
     to_port         = 0
     protocol        = "-1"
-    security_groups = [aws_security_group.srihari_public_sg.id]
+    security_groups = [aws_security_group.sinha_public_sg.id]
   }
 
   egress {
@@ -92,18 +92,18 @@ resource "aws_security_group" "srihari_private_sg" {
 }
 
 # Launch Template for Public EC2 Instances
-resource "aws_launch_template" "srihari_public_instance" {
-  name          = "srihari-public-instance-template"
+resource "aws_launch_template" "sinha_public_instance" {
+  name          = "sinha-public-instance-template"
   instance_type = "t2.micro"
   image_id      = "ami-055e3d4f0bbeb5878" 
   iam_instance_profile {
-    name = aws_iam_instance_profile.srihari_public_role.name
+    name = aws_iam_instance_profile.sinha_public_role.name
   }
-  vpc_security_group_ids = [aws_security_group.srihari_public_sg.id]
+  vpc_security_group_ids = [aws_security_group.sinha_public_sg.id]
 }
 
 # Auto Scaling Group for Public EC2 Instances
-resource "aws_autoscaling_group" "srihari_public_asg" {
+resource "aws_autoscaling_group" "sinha_public_asg" {
   desired_capacity    = 2
   max_size            = 3
   min_size            = 1
@@ -112,26 +112,26 @@ resource "aws_autoscaling_group" "srihari_public_asg" {
     aws_subnet.public[1].id
   ]
   launch_template {
-    id      = aws_launch_template.srihari_public_instance.id
+    id      = aws_launch_template.sinha_public_instance.id
     version = "$Latest"
   }
-  target_group_arns = [aws_lb_target_group.srihari_app_targets.arn]
+  target_group_arns = [aws_lb_target_group.sinha_app_targets.arn]
 }
 
 # Private EC2 Instance
-resource "aws_instance" "srihari_private_instance" {
+resource "aws_instance" "sinha_private_instance" {
   ami                    = "ami-055e3d4f0bbeb5878"
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.private[0].id
-  vpc_security_group_ids = [aws_security_group.srihari_private_sg.id]
+  vpc_security_group_ids = [aws_security_group.sinha_private_sg.id]
 }
 
 # Application Load Balancer
-resource "aws_lb" "srihari_application_lb" {
-  name               = "srihari-app-lb"
+resource "aws_lb" "sinha_application_lb" {
+  name               = "sinha-app-lb"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.srihari_public_sg.id]
+  security_groups    = [aws_security_group.sinha_public_sg.id]
   subnets            = [
     aws_subnet.public[0].id,
     aws_subnet.public[1].id
@@ -139,27 +139,27 @@ resource "aws_lb" "srihari_application_lb" {
 }
 
 # Target Group for Application Load Balancer
-resource "aws_lb_target_group" "srihari_app_targets" {
-  name     = "srihari-app-targets"
+resource "aws_lb_target_group" "sinha_app_targets" {
+  name     = "sinha-app-targets"
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.main.id
 }
 
 # Listener for Application Load Balancer
-resource "aws_lb_listener" "srihari_app_listener" {
-  load_balancer_arn = aws_lb.srihari_application_lb.arn
+resource "aws_lb_listener" "sinha_app_listener" {
+  load_balancer_arn = aws_lb.sinha_application_lb.arn
   port              = 80
   protocol          = "HTTP"
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.srihari_app_targets.arn
+    target_group_arn = aws_lb_target_group.sinha_app_targets.arn
   }
 }
 
 # Network Load Balancer
-resource "aws_lb" "srihari_network_lb" {
-  name               = "srihari-net-lb"
+resource "aws_lb" "sinha_network_lb" {
+  name               = "sinha-net-lb"
   internal           = true
   load_balancer_type = "network"
   subnets            = [
@@ -169,54 +169,54 @@ resource "aws_lb" "srihari_network_lb" {
 }
 
 # Target Group for Network Load Balancer
-resource "aws_lb_target_group" "srihari_network_targets" {
-  name     = "srihari-net-targets"
+resource "aws_lb_target_group" "sinha_network_targets" {
+  name     = "sinha-net-targets"
   port     = 80
   protocol = "TCP"
   vpc_id   = aws_vpc.main.id
 }
 
 # Listener for Network Load Balancer
-resource "aws_lb_listener" "srihari_net_listener" {
-  load_balancer_arn = aws_lb.srihari_network_lb.arn
+resource "aws_lb_listener" "sinha_net_listener" {
+  load_balancer_arn = aws_lb.sinha_network_lb.arn
   port              = 80
   protocol          = "TCP"
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.srihari_network_targets.arn
+    target_group_arn = aws_lb_target_group.sinha_network_targets.arn
   }
 }
 
 # S3 Bucket
-resource "aws_s3_bucket" "srihari_private_bucket" {
-  bucket = "srihari-private-bucket"
+resource "aws_s3_bucket" "sinha_private_bucket" {
+  bucket = "sinha-private-bucket"
 }
 
-resource "aws_s3_bucket_ownership_controls" "srihari_private_bucket_ownership_controls" {
-  bucket = aws_s3_bucket.srihari_private_bucket.id # Associates the ownership controls with the bucket
+resource "aws_s3_bucket_ownership_controls" "sinha_private_bucket_ownership_controls" {
+  bucket = aws_s3_bucket.sinha_private_bucket.id # Associates the ownership controls with the bucket
   rule {
     object_ownership = "BucketOwnerPreferred" # Sets the object ownership rule
   }
 }
 
 # S3 Bucket ACL
-resource "aws_s3_bucket_acl" "srihari_private_bucket_acl" {
-  depends_on = [aws_s3_bucket_ownership_controls.srihari_private_bucket_ownership_controls] # Ensures ownership controls are created first
-  bucket = aws_s3_bucket.srihari_private_bucket.id # Associates the ACL with the bucket
+resource "aws_s3_bucket_acl" "sinha_private_bucket_acl" {
+  depends_on = [aws_s3_bucket_ownership_controls.sinha_private_bucket_ownership_controls] # Ensures ownership controls are created first
+  bucket = aws_s3_bucket.sinha_private_bucket.id # Associates the ACL with the bucket
   acl = "private" # Applies private ACL
 }
 
 # S3 Bucket Versioning
-resource "aws_s3_bucket_versioning" "srihari_s3_versioning" {
-  bucket = aws_s3_bucket.srihari_private_bucket.id # Associates versioning with the bucket
+resource "aws_s3_bucket_versioning" "sinha_s3_versioning" {
+  bucket = aws_s3_bucket.sinha_private_bucket.id # Associates versioning with the bucket
   versioning_configuration {
     status = "Enabled" # Enables versioning
   }
 }
 
 # IAM Role
-resource "aws_iam_role" "srihari_public_role" {
-  name               = "srihari-public-role"
+resource "aws_iam_role" "sinha_public_role" {
+  name               = "sinha-public-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -230,8 +230,8 @@ resource "aws_iam_role" "srihari_public_role" {
 }
 
 # IAM Policy for S3 Access
-resource "aws_iam_policy" "srihari_s3_access" {
-  name        = "srihari-s3-access-unique"
+resource "aws_iam_policy" "sinha_s3_access" {
+  name        = "sinha-s3-access-unique"
   description = "Full access to the S3 bucket"
   policy      = jsonencode({
     Version = "2012-10-17",
@@ -239,20 +239,20 @@ resource "aws_iam_policy" "srihari_s3_access" {
       {
         Action   = ["s3:*"],
         Effect   = "Allow",
-        Resource = [aws_s3_bucket.srihari_private_bucket.arn, "${aws_s3_bucket.srihari_private_bucket.arn}/*"]
+        Resource = [aws_s3_bucket.sinha_private_bucket.arn, "${aws_s3_bucket.sinha_private_bucket.arn}/*"]
       }
     ]
   })
 }
 
 # Attach IAM Policy to Role
-resource "aws_iam_role_policy_attachment" "srihari_attach_policy" {
-  role       = aws_iam_role.srihari_public_role.name
-  policy_arn = aws_iam_policy.srihari_s3_access.arn
+resource "aws_iam_role_policy_attachment" "sinha_attach_policy" {
+  role       = aws_iam_role.sinha_public_role.name
+  policy_arn = aws_iam_policy.sinha_s3_access.arn
 }
 
 # IAM Instance Profile
-resource "aws_iam_instance_profile" "srihari_public_role" {
-  name = "srihari-public-instance-profile-unique"
-  role = aws_iam_role.srihari_public_role.name
+resource "aws_iam_instance_profile" "sinha_public_role" {
+  name = "sinha-public-instance-profile-unique"
+  role = aws_iam_role.sinha_public_role.name
 }
