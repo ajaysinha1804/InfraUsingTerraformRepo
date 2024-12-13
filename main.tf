@@ -1,17 +1,13 @@
-provider "aws" {
-  region = "us-west-2"
-}
-
-# VPC Creation
+#  VPC Creation
 resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block = var.vpc_cidr
 }
 
 # Public Subnet Creation
 resource "aws_subnet" "public" {
   count = 2
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = cidrsubnet(aws_vpc.main.cidr_block, 4, count.index)
+  cidr_block              = var.public_subnet_cidrs[count.index]
   map_public_ip_on_launch = true
   availability_zone       = ["us-west-2a", "us-west-2b"][count.index]
 }
@@ -20,7 +16,7 @@ resource "aws_subnet" "public" {
 resource "aws_subnet" "private" {
   count = 2
   vpc_id            = aws_vpc.main.id
-  cidr_block        = cidrsubnet(aws_vpc.main.cidr_block, 4, 2 + count.index)
+  cidr_block        = var.private_subnet_cidrs[count.index]
   availability_zone = ["us-west-2a", "us-west-2b"][count.index]
 }
 
@@ -94,8 +90,8 @@ resource "aws_security_group" "sinha_private_sg" {
 # Launch Template for Public EC2 Instances
 resource "aws_launch_template" "sinha_public_instance" {
   name          = "sinha-public-instance-template"
-  instance_type = "t2.micro"
-  image_id      = "ami-055e3d4f0bbeb5878" 
+  instance_type = var.instance_type
+  image_id      = var.ami_id
   iam_instance_profile {
     name = aws_iam_instance_profile.sinha_public_role.name
   }
@@ -120,8 +116,8 @@ resource "aws_autoscaling_group" "sinha_public_asg" {
 
 # Private EC2 Instance
 resource "aws_instance" "sinha_private_instance" {
-  ami                    = "ami-055e3d4f0bbeb5878"
-  instance_type          = "t2.micro"
+  ami                    = var.ami_id
+  instance_type          = var.instance_type
   subnet_id              = aws_subnet.private[0].id
   vpc_security_group_ids = [aws_security_group.sinha_private_sg.id]
 }
@@ -193,24 +189,22 @@ resource "aws_s3_bucket" "sinha_private_bucket" {
 }
 
 resource "aws_s3_bucket_ownership_controls" "sinha_private_bucket_ownership_controls" {
-  bucket = aws_s3_bucket.sinha_private_bucket.id # Associates the ownership controls with the bucket
+  bucket = aws_s3_bucket.sinha_private_bucket.id
   rule {
-    object_ownership = "BucketOwnerPreferred" # Sets the object ownership rule
+    object_ownership = "BucketOwnerPreferred"
   }
 }
 
-# S3 Bucket ACL
 resource "aws_s3_bucket_acl" "sinha_private_bucket_acl" {
-  depends_on = [aws_s3_bucket_ownership_controls.sinha_private_bucket_ownership_controls] # Ensures ownership controls are created first
-  bucket = aws_s3_bucket.sinha_private_bucket.id # Associates the ACL with the bucket
-  acl = "private" # Applies private ACL
+  depends_on = [aws_s3_bucket_ownership_controls.sinha_private_bucket_ownership_controls]
+  bucket     = aws_s3_bucket.sinha_private_bucket.id
+  acl        = "private"
 }
 
-# S3 Bucket Versioning
 resource "aws_s3_bucket_versioning" "sinha_s3_versioning" {
-  bucket = aws_s3_bucket.sinha_private_bucket.id # Associates versioning with the bucket
+  bucket = aws_s3_bucket.sinha_private_bucket.id
   versioning_configuration {
-    status = "Enabled" # Enables versioning
+    status = "Enabled"
   }
 }
 
