@@ -23,7 +23,7 @@ phases:
   post_build:
     commands:
       - echo Waiting for 5 minutes before destroying the deployment
-      - sleep 180
+      - sleep 240
       - echo Destroying Deployment
       - terraform destroy -auto-approve
 artifacts:
